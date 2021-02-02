@@ -8,8 +8,9 @@
 /* length of all promises with space between them plus a NUL */
 #define MAXLEN_PROMISE 191
 #define NUMBER_PROMISES 33
-#define EXIT_INVALID_PROMISE 2
-#define EXIT_NO_PROMISES 3
+#define EXIT_NO_PROMISES 2
+#define EXIT_INVALID_PROMISE 3
+#define EXIT_INVALID_UNVEIL 4
 
 const char *allpromises[] = {
     "stdio", "rpath", "wpath", "cpath", "dpath", "tmppath", "inet",
@@ -21,6 +22,8 @@ const char *allpromises[] = {
 
 
 int  validpromise(const char *);
+int  isunveilperm(const char);
+int  validunveil(const char*);
 void appendpromise(const char **, const char *);
 void invertpromises(const char **);
 void listpromises(void);
@@ -33,15 +36,26 @@ main(int argc, char **argv)
 {
     int ch, invert, verbose;
     char pledgestr[MAXLEN_PROMISE];
-    char *shell;
+    char *shell, *uoption;
     char *shellargv[2] = {NULL};
     const char *promises[NUMBER_PROMISES+1] = {NULL};
 
     pledgestr[0] = '\0';
     invert = verbose = 0;
+    uoption = NULL;
 
-    while ((ch = getopt(argc, argv, "hilp:v")) != -1) {
+    while ((ch = getopt(argc, argv, "d:hilo:p:v")) != -1) {
         switch(ch) {
+        case 'd':
+            if (!uoption) {
+                fprintf(stderr, "Unveil options must be specified before a directory.\n");
+                exit(EXIT_FAILURE);
+            }
+            if (unveil(optarg, uoption) != 0) {
+                perror("Failed to unveil");
+                exit(EXIT_FAILURE);
+            }
+            break;
         case 'h':
             usage();
             exit(EXIT_SUCCESS);
@@ -51,9 +65,16 @@ main(int argc, char **argv)
         case 'l':
             listpromises();
             exit(EXIT_SUCCESS);
+        case 'o':
+            if (!validunveil(optarg)) {
+                fprintf(stderr, "%s is not a valid unveil permission string\n", optarg);
+                exit(EXIT_INVALID_UNVEIL);
+            }
+            uoption = optarg;
+            break;
         case 'p':
             if (!validpromise(optarg)) {
-                printf("%s is not a valid pledge\n", optarg);
+                fprintf(stderr, "%s is not a valid pledge\n", optarg);
                 exit(EXIT_INVALID_PROMISE);
             }
             appendpromise(promises, optarg);
@@ -105,7 +126,7 @@ main(int argc, char **argv)
 void
 usage(void)
 {
-    printf("pjail: [-hilv] [-p promise] [command] [args...]\n");
+    printf("pjail: [-hilv] [-p <promise>] [-o <permissions>] [-d <directory>] [command] [args...]\n");
 }
 
 void
@@ -179,4 +200,20 @@ invertpromises(const char **promises)
     outer:;
     }
     *promises = NULL;
+}
+
+int
+validunveil(const char *perms)
+{
+    char c;
+    while ((c = *perms++))
+        if (!isunveilperm(c))
+            return 0;
+    return 1;
+}
+
+int
+isunveilperm(const char perm)
+{
+    return strchr("rwxc", perm) != NULL;
 }
