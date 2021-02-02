@@ -100,6 +100,9 @@ main(int argc, char **argv)
         exit(EXIT_NO_PROMISES);
     }
 
+    if (useunveil)
+        unveil(NULL, NULL);
+
     if (invert)
         invertpromises(promises);
 
