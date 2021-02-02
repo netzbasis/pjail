@@ -34,14 +34,14 @@ void pledgefmt(char *, int, const char **);
 int
 main(int argc, char **argv)
 {
-    int ch, invert, verbose;
+    int ch, invert, verbose, restriction;
     char pledgestr[MAXLEN_PROMISE];
     char *shell, *uoption;
     char *shellargv[2] = {NULL};
     const char *promises[NUMBER_PROMISES+1] = {NULL};
 
     pledgestr[0] = '\0';
-    invert = verbose = 0;
+    invert = verbose = restriction = 0;
     uoption = NULL;
 
     while ((ch = getopt(argc, argv, "d:hilo:p:v")) != -1) {
@@ -55,6 +55,7 @@ main(int argc, char **argv)
                 perror("Failed to unveil");
                 exit(EXIT_FAILURE);
             }
+            restriction = 1;
             break;
         case 'h':
             usage();
@@ -78,6 +79,7 @@ main(int argc, char **argv)
                 exit(EXIT_INVALID_PROMISE);
             }
             appendpromise(promises, optarg);
+            restriction = 1;
             break;
         case 'v':
             verbose = 1;
@@ -92,8 +94,8 @@ main(int argc, char **argv)
     argv += optind;
 
 
-    if (promises[0] == NULL) {
-        fprintf(stderr, "No promises\n");
+    if (!restriction) {
+        fprintf(stderr, "No restrictions\n");
         usage();
         exit(EXIT_NO_PROMISES);
     }
