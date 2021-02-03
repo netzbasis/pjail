@@ -110,7 +110,7 @@ main(int argc, char **argv)
 
     pledgefmt(pledgestr, MAXLEN_PROMISE, promises);
 
-    if (verbose)
+    if (usepledge && verbose)
         fprintf(stderr,"pledge string: %s\n", pledgestr);
 
     if (usepledge && pledge("stdio exec", pledgestr) != 0)
