@@ -51,6 +51,8 @@ main(int argc, char **argv)
                 fprintf(stderr, "Unveil options must be specified before a directory.\n");
                 exit(EXIT_FAILURE);
             }
+            if (verbose)
+                printf("Unveiling %s with %s\n", optarg, uoption);
             if (unveil(optarg, uoption) != 0) {
                 perror("Failed to unveil");
                 exit(EXIT_FAILURE);
